@@ -11,11 +11,13 @@ class Hopfield:
         # number of patterns
         self.q = len(train_data)
         for i in range(self.q):
-            self.W += np.dot(train_data[i], train_data[i].T) / self.q
+            self.W += np.outer(train_data[i], train_data[i]) / self.q
         for i in range(self.size):
             self.W[i][i] = 0
         
         self.theta = 0
+
+        #print(self.W)
 
     def energy(self, x):
         """calculate potential energy"""
@@ -24,12 +26,11 @@ class Hopfield:
     def update(self, data):
         for i in range(self.q):
             v0 = self.energy(data[i])
-            print(v0)
-            for j in range(10):
+            #print(v0)
+            for j in range(5):
                 data[i] = np.sign(np.dot(self.W, data[i]) - self.theta)
-                print("updating")
-                print(data)
-                #self.visualize(data)
+                #print("updating")
+                #print(data)
             """
             while True:
                 data[i] = np.sign(np.dot(self.W, data[i]) - self.theta)
@@ -39,6 +40,7 @@ class Hopfield:
                     updated[i] = data[i]
                     break
             """
+            #self.visualize(data)
         return data
 
     def visualize(self, data):
@@ -51,19 +53,22 @@ class Hopfield:
         for i in range(self.q):
             for j in range(self.size):
                 if random.random() <= ratio:
-                    print(data[i])
+                    #print(data[i])
                     data[i][j] = - data[i][j]
-        print("Add noise")
+        #print("Add noise")
         return data
 
 def train(train_data):
     hopfield = Hopfield(train_data)
     hopfield.visualize(train_data)
     init = hopfield.noise(train_data, 0.10)
+    hopfield.visualize(init)
     recollected = hopfield.update(init)
     hopfield.visualize(recollected)
-    print("recollected!")
+    #print("recollected")
 
 if __name__ == "__main__":
-    train_data = np.array([np.array([-1, -1, 1, -1, -1, -1, 1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, -1, -1, 1, -1, 1, -1])])
+    train_data = np.array([np.array([-1, -1, 1, -1, -1, -1, 1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, -1, -1, 1, -1, 1, -1]),
+                            np.array([1, 1, 1, -1, -1, 1, -1, -1, 1, -1, 1, 1, 1, -1, -1, 1, -1, -1, 1, -1, 1, 1, 1, -1, -1]),
+                            np.array([-1, 1, 1, 1, -1, 1, -1, -1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, 1, 1, 1, -1])])
     train(train_data)
