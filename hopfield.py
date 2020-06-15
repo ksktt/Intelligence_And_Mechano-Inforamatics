@@ -30,6 +30,4 @@ class Hopfield:
 
 def train(train_data):
     
-
 if __name__ == "__main__":
-
