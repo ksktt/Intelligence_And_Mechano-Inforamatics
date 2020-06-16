@@ -36,10 +36,13 @@ class Hopfield:
                 #print("updating")
                 #print(data)
 
+                self.visualize(data)
+
                 #calculate recall performance
                 sim, acc = self.performance(data[i], train_data[i])
                 sim_ave += sim / trial
                 acc_ratio += acc / trial
+                #print(sim_ave, acc_ratio)
             sim_list.append(sim_ave)
             acc_list.append(acc_ratio)
 
@@ -57,7 +60,6 @@ class Hopfield:
                 if v0 == v1:
                     break
             """
-            #self.visualize(data)
         return data, sim_list, acc_list
 
     def visualize(self, data):
@@ -70,7 +72,6 @@ class Hopfield:
         for i in range(self.q):
             for j in range(self.size):
                 if random.random() <= ratio:
-                    #print(data[i])
                     data[i][j] = - data[i][j]
         #print("Add noise")
         return data
@@ -78,22 +79,26 @@ class Hopfield:
     def performance(self, data, train_data):
         sim = 0
         acc = 0
+        #print(data, train_data)
         for i in range(self.size):
             if data[i] == train_data[i]:
                 sim += 1
-            sim = sim / self.size
+            #print(sim)
+        sim = sim / self.size
             
         if (data == train_data).all():
             acc += 1
+            #print(acc)
         return sim, acc
         
 
 def train(train_data):
+    original_data = np.copy(train_data)
     hopfield = Hopfield(train_data)
     hopfield.visualize(train_data)
-    init = hopfield.noise(train_data, 0.10)
+    init = hopfield.noise(train_data, 0.30)
     hopfield.visualize(init)
-    recollected , sim, acc = hopfield.update(init, train_data, 5)
+    recollected , sim, acc = hopfield.update(init, original_data, 5)
     hopfield.visualize(recollected)
     print("similarity : {}, accuracy : {}".format(sim, acc))
     #print("recalled")
