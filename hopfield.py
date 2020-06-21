@@ -23,50 +23,44 @@ class Hopfield:
         """calculate potential energy"""
         return - np.dot(np.dot(self.W, x), x) / 2 + np.sum(self.theta * x)
 
-    def update(self, data, train_data, trial):
-        sim_list = []
-        acc_list = []
-        for i in range(self.q):
-            #v = self.energy(data[i])
-            #print(v)
-            sim_ave = 0
-            acc_ratio = 0
-            for j in range(trial):
-                data[i] = np.sign(np.dot(self.W, data[i]) - self.theta)
-                #print("updating")
-                #print(data)
+    def update(self, data, train_data):
+        v0 = self.energy(data)
+        """
+        #synchronous type
+        for j in range(trial):
+            data = np.sign(np.dot(self.W, data) - self.theta)
+        #calculate recall performance
+        sim, acc = self.performance(data[i], train_data[i])
+        """
 
-                self.visualize(data)
+        #asynchronous type
+        for _ in range(300):
+            #v = self.energy(data)
+            n = random.randint(0, self.size - 1)
+            data[n] = np.sign(np.dot(self.W[n], data) - self.theta)
+        sim, acc = self.performance(data, train_data)
+        
+        """
+        #asynchronous type
+        while True:
+            print(v0)
+            n = random.randint(0, self.size - 1)
+            data[n] = np.sign(np.dot(self.W[n], data) - self.theta)
+            v1 = self.energy(data)
+            print(v1)
+            if v0 == v1:
+                break
 
-                #calculate recall performance
-                sim, acc = self.performance(data[i], train_data[i])
-                sim_ave += sim / trial
-                acc_ratio += acc / trial
-                #print(sim_ave, acc_ratio)
-            sim_list.append(sim_ave)
-            acc_list.append(acc_ratio)
-
-            """
-            while True:
-                cnt += 1
-                v0 = self.energy(data[i])
-                data[i] = np.sign(np.dot(self.W, data[i]) - self.theta)
-                v1 = self.energy(data[i])
-                print("now recollecting")
-
-                acc, ratio = self.performance(data[i], train_data[i])
-                acc_list.append(acc)
-
-                if v0 == v1:
-                    break
-            """
-        return data, sim_list, acc_list
+            v0 = v1
+            
+        sim, acc = self.performance(data, train_data)
+        """
+        return data, sim, acc
 
     def visualize(self, data):
-        for i in range(self.q):
-            x = np.reshape(data[i], [5,5])
-            plt.imshow(x, cmap = 'gray', vmin = -1, vmax = 1, interpolation = 'none')
-            plt.show()
+        x = np.reshape(data, [5,5])
+        plt.imshow(x, cmap = 'gray', vmin = -1, vmax = 1, interpolation = 'none')
+        plt.show()
 
     def noise(self, data, ratio):
         for i in range(self.q):
@@ -79,32 +73,55 @@ class Hopfield:
     def performance(self, data, train_data):
         sim = 0
         acc = 0
-        #print(data, train_data)
         for i in range(self.size):
             if data[i] == train_data[i]:
                 sim += 1
-            #print(sim)
         sim = sim / self.size
             
         if (data == train_data).all():
             acc += 1
-            #print(acc)
         return sim, acc
         
 
-def train(train_data):
+def train(train_data, noise, idx):
     original_data = np.copy(train_data)
     hopfield = Hopfield(train_data)
-    hopfield.visualize(train_data)
-    init = hopfield.noise(train_data, 0.30)
-    hopfield.visualize(init)
-    recollected , sim, acc = hopfield.update(init, original_data, 5)
-    hopfield.visualize(recollected)
-    print("similarity : {}, accuracy : {}".format(sim, acc))
-    #print("recalled")
+    #hopfield.visualize(train_data[idx])
+    init = hopfield.noise(train_data, noise)
+    #hopfield.visualize(init[idx])
+    recollected , sim, acc = hopfield.update(init[idx], original_data[idx])
+    return sim, acc
+    #hopfield.visualize(recollected)
 
 if __name__ == "__main__":
-    train_data = np.array([np.array([-1, -1, 1, -1, -1, -1, 1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, -1, -1, 1, -1, 1, -1]),
-                            np.array([1, 1, 1, -1, -1, 1, -1, -1, 1, -1, 1, 1, 1, -1, -1, 1, -1, -1, 1, -1, 1, 1, 1, -1, -1]),
-                            np.array([-1, 1, 1, 1, -1, 1, -1, -1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, -1, -1, -1, 1, 1, 1, -1])])
-    train(train_data)
+    train_data1 = np.array([np.array([1, -1, -1, -1, 1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, 1, -1, -1, -1, 1])])
+    train_data2 = np.array([np.array([1, -1, -1, -1, 1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, 1, -1, -1, -1, 1]),
+                            np.array([1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1])])
+    train_data3 = np.array([np.array([1, -1, -1, -1, 1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, 1, -1, -1, -1, 1]),
+                            np.array([1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1]),
+                            np.array([1, 1, -1, 1, 1, 1, -1, 1, -1, 1, 1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, 1])])
+    train_data4 =  np.array([np.array([1, -1, -1, -1, 1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, 1, -1, -1, -1, 1]),
+                            np.array([1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1]),
+                            np.array([1, 1, -1, 1, 1, 1, -1, 1, -1, 1, 1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, 1]),
+                            np.array([-1, -1, -1, 1, 1, -1, 1, 1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, 1, -1, -1, -1, 1, 1])])
+    train_data5 = np.array([np.array([1, -1, -1, -1, 1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, 1, -1, -1, -1, 1]),
+                            np.array([1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1]),
+                            np.array([1, 1, -1, 1, 1, 1, -1, 1, -1, 1, 1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, 1]),
+                            np.array([-1, -1, -1, 1, 1, -1, 1, 1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, 1, -1, -1, -1, 1, 1]),
+                            np.array([-1, 1, 1, 1, 1, -1, 1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, 1, 1, 1, -1, 1])])
+    train_data6 = np.array([np.array([1, -1, -1, -1, 1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, 1, -1, -1, -1, 1]),
+                            np.array([1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1]),
+                            np.array([1, 1, -1, 1, 1, 1, -1, 1, -1, 1, 1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, 1]),
+                            np.array([-1, -1, -1, 1, 1, -1, 1, 1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, -1, 1, -1, -1, -1, 1, 1]),
+                            np.array([-1, 1, 1, 1, 1, -1, 1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, 1, 1, 1, -1, 1]),
+                            np.array([-1, -1, -1, -1, -1, -1, 1, 1, 1, -1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, -1, 1, 1])])
+    total_sim = 0
+    total_acc = 0
+    for i in range(1000):
+        sim, acc = train(train_data3, 0.10, 0)
+        total_sim += sim
+        total_acc += acc
+    total_sim /= 1000
+    total_acc /= 1000
+    print("similarity : {}, accuracy : {}".format(total_sim, total_acc))
+#optimize theta
